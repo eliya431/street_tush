@@ -135,18 +135,16 @@ function selectCar(i){
   selected=i;
   saveGame();
   updateGarage();
-  document.getElementById("leftBtn").addEventListener("click",()=>{
- if(playing && playerX>100) playerX-=105;
-});
+ const leftBtn = document.getElementById("leftBtn");
+const rightBtn = document.getElementById("rightBtn");
 
-document.getElementById("rightBtn").addEventListener("click",()=>{
- if(playing && playerX<300) playerX+=105;
-});
-  alert("Car purchased!");
- }else{
-  alert("Not enough coins!");
- }
-}
+leftBtn.onclick = () => {
+ if(playing && playerX > 100) playerX -= 105;
+};
+
+rightBtn.onclick = () => {
+ if(playing && playerX < 300) playerX += 105;
+};
 
 const canvas=document.getElementById("road");
 const ctx=canvas.getContext("2d");
