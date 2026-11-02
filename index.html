@@ -76,7 +76,10 @@ canvas{
 <div id="game">
 <h2 id="carName"></h2>
 <canvas id="road" width="400" height="600"></canvas>
-<p>⬅️ ➡️ Move with arrow keys</p>
+<div style="display:flex;justify-content:center;gap:35px;margin:20px">
+<button id="leftBtn" style="font-size:30px;padding:15px 35px">⬅️</button>
+<button id="rightBtn" style="font-size:30px;padding:15px 35px">➡️</button>
+</div>
 <button id="garageBtn" onclick="backGarage()">GARAGE</button>
 </div>
 
@@ -132,6 +135,13 @@ function selectCar(i){
   selected=i;
   saveGame();
   updateGarage();
+  document.getElementById("leftBtn").addEventListener("click",()=>{
+ if(playing && playerX>100) playerX-=105;
+});
+
+document.getElementById("rightBtn").addEventListener("click",()=>{
+ if(playing && playerX<300) playerX+=105;
+});
   alert("Car purchased!");
  }else{
   alert("Not enough coins!");
