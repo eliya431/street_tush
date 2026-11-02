@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STREET RUSH</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:radial-gradient(circle at top,#202b45,#05070d 75%);
+ color:white;
+ font-family:Arial,sans-serif;
+ text-align:center;
+ overflow-x:hidden;
+}
+header{
+ padding:25px;
+ background:linear-gradient(135deg,#111827,#260b18);
+ border-bottom:2px solid #ff1744;
+ box-shadow:0 5px 25px #ff174455;
+}
+h1{
+ color:#ff1744;
+ letter-spacing:7px;
+ text-shadow:0 0 15px #ff1744;
+ font-size:32px;
+}
+h1{color:#ed2020;letter-spacing:5px}
+#money{color:#ffd700;font-size:20px;margin:15px}
+#garage{
+ display:grid;grid-template-columns:repeat(2,1fr);
+ gap:12px;padding:15px;max-width:600px;margin:auto;
+}
+.car{
+ background:linear-gradient(145deg,#202b40,#0b101b);
+ border:1px solid #ff174455;
+ border-radius:16px;
+ padding:18px;
+ box-shadow:0 0 15px #ff174422;
+ transition:0.3s;
+}
+.car:hover{
+ border-color:#ff1744;
+ box-shadow:0 0 22px #ff174466;
+ transform:translateY(-4px);
+}
+.car .emoji{font-size:55px;margin:10px}
+.car h3{margin:8px;color:#ff4242}
+button{
+ background:#ed2020;color:white;border:0;
+ padding:12px 18px;border-radius:8px;
+ font-weight:bold;cursor:pointer;margin:5px;
+}
+button:disabled{background:#555}
+#game{display:none}
+canvas{
+ background:#111;width:95%;max-width:500px;
+ border:2px solid #ed2020;border-radius:10px;
+}
+#garageBtn{background:#333}
+</style>
+</head>
+<body>
+
+<header>
+<h1>STREET RUSH</h1>
+<div>YOUR STREET. YOUR RULES.</div>
+</header>
+
+<div id="money">💰 Coins: <span id="coins">500</span></div>
+
+<div id="garage">
+</div>
+
+<div id="game">
+<h2 id="carName"></h2>
+<canvas id="road" width="400" height="600"></canvas>
+<p>⬅️ ➡️ Move with arrow keys</p>
+<button id="garageBtn" onclick="backGarage()">GARAGE</button>
+</div>
+
+<script>
+const cars=[
+{name:"VORTEX X",emoji:"🏎️",price:0,color:"#ed2020"},
+{name:"VENOM GT",emoji:"🚘",price:100,color:"#eeeeee"},
+{name:"APEX R",emoji:"🏁",price:300,color:"#2277ff"},
+{name:"NIGHTFURY",emoji:"🌑",price:500,color:"#aaaaaa"}
+];
+
+let money=Number(localStorage.getItem("sr_money"))||500;
+let owned=JSON.parse(localStorage.getItem("sr_owned"))||[true,false,false,false];
+let selected=Number(localStorage.getItem("sr_selected"))||0;
+
+function saveGame(){
+ localStorage.setItem("sr_money",money);
+ localStorage.setItem("sr_owned",JSON.stringify(owned));
+ localStorage.setItem("sr_selected",selected);
+}
+let lane=1;
+let score=0;
+let traffic=[];
+let playing=false;
+function updateGarage(){
+ const g=document.getElementById("garage");
+ g.innerHTML="";
+ cars.forEach((c,i)=>{
+  let bought=owned[i];
+  g.innerHTML+=`
+   <div class="car">
+    <div class="emoji">${c.emoji}</div>
+    <h3>${c.name}</h3>
+    <p>Price: ${c.price} Coins</p>
+    <button onclick="selectCar(${i})">
+     ${bought?(selected===i?"SELECTED":"SELECT"):"BUY"}
+    </button>
+   </div>`;
+ });
+ document.getElementById("coins").textContent=money;
+ saveGame();
+}
+
+function selectCar(i){
+ if(owned[i]){
+  selected=i;
+  saveGame();
+  updateGarage();
+  startGame();
+ }else if(money>=cars[i].price){
+  money-=cars[i].price;
+  owned[i]=true;
+  selected=i;
+  saveGame();
+  updateGarage();
+  alert("Car purchased!");
+ }else{
+  alert("Not enough coins!");
+ }
+}
+
+const canvas=document.getElementById("road");
+const ctx=canvas.getContext("2d");
+let playerX=200;
+let roadLines=0;
+
+function draw(){
+ if(!playing)return;
+
+ ctx.clearRect(0,0,400,600);
+
+ // Night sky
+ let sky=ctx.createLinearGradient(0,0,0,600);
+ sky.addColorStop(0,"#08051b");
+ sky.addColorStop(1,"#14102c");
+ ctx.fillStyle=sky;
+ ctx.fillRect(0,0,400,600);
+
+ // City buildings
+ for(let i=0;i<12;i++){
+  let x=i<6?i*35:i*35+175;
+  let w=24;
+  ctx.fillStyle="#111b35";
+  ctx.fillRect(x,80,w,220);
+  ctx.fillStyle="#00eaff";
+  for(let y=95;y<270;y+=28){
+   ctx.fillRect(x+6,y,4,7);
+   ctx.fillRect(x+15,y,4,7);
+  }
+ }
+
+ // Road
+ ctx.fillStyle="#202333";
+ ctx.fillRect(45,0,310,600);
+
+ // Neon road borders
+ ctx.shadowBlur=18;
+ ctx.shadowColor="#00eaff";
+ ctx.strokeStyle="#00eaff";
+ ctx.lineWidth=4;
+ ctx.beginPath();
+ ctx.moveTo(45,0);
+ ctx.lineTo(45,600);
+ ctx.moveTo(355,0);
+ ctx.lineTo(355,600);
+ ctx.stroke();
+ ctx.shadowBlur=0;
+
+ // Lane lines
+ ctx.strokeStyle="#ff1744";
+ ctx.lineWidth=3;
+ ctx.setLineDash([35,30]);
+ ctx.lineDashOffset=-score%65;
+ ctx.beginPath();
+ ctx.moveTo(148,0);
+ ctx.lineTo(148,600);
+ ctx.moveTo(252,0);
+ ctx.lineTo(252,600);
+ ctx.stroke();
+ ctx.setLineDash([]);
+
+ // Traffic
+ traffic.forEach(t=>{
+  t.y+=5;
+
+  // Car shadow
+  ctx.fillStyle="#050509";
+  ctx.fillRect(t.x-20,t.y+5,40,62);
+
+  // Car body
+  ctx.fillStyle=t.color;
+  ctx.beginPath();
+  ctx.moveTo(t.x-18,t.y+55);
+  ctx.lineTo(t.x-18,t.y+18);
+  ctx.lineTo(t.x-11,t.y+5);
+  ctx.lineTo(t.x+11,t.y+5);
+  ctx.lineTo(t.x+18,t.y+18);
+  ctx.lineTo(t.x+18,t.y+55);
+  ctx.closePath();
+  ctx.fill();
+
+  // Windows
+  ctx.fillStyle="#101b35";
+  ctx.fillRect(t.x-12,t.y+13,24,15);
+  ctx.fillRect(t.x-12,t.y+34,24,12);
+
+  // Lights
+  ctx.fillStyle="#ff1744";
+  ctx.fillRect(t.x-14,t.y+49,7,4);
+  ctx.fillRect(t.x+7,t.y+49,7,4);
+
+  // Wheels
+  ctx.fillStyle="#050505";
+  ctx.fillRect(t.x-21,t.y+15,5,13);
+  ctx.fillRect(t.x+16,t.y+15,5,13);
+  ctx.fillRect(t.x-21,t.y+42,5,13);
+  ctx.fillRect(t.x+16,t.y+42,5,13);
+ });
+
+ traffic=traffic.filter(t=>t.y<620);
+
+ if(Math.random()<0.025){
+  let x=[95,200,305][Math.floor(Math.random()*3)];
+  traffic.push({
+   x:x,
+   y:-60,
+   color:["#00eaff","#ff1744","#f5d442","#eeeeee","#8b5cf6"][Math.floor(Math.random()*5)]
+  });
+ }
+
+ // Player car
+ ctx.shadowBlur=20;
+ ctx.shadowColor=cars[selected].color;
+ ctx.fillStyle=cars[selected].color;
+ ctx.fillRect(playerX-19,490,38,70);
+ ctx.shadowBlur=0;
+
+ ctx.fillStyle="#111";
+ ctx.fillRect(playerX-13,500,26,15);
+ ctx.fillRect(playerX-13,535,26,15);
+
+ // Collision
+ for(let t of traffic){
+  if(Math.abs(t.x-playerX)<32&&t.y>440&&t.y<555){
+   playing=false;
+   alert("CRASH! Score: "+score);
+   backGarage();
+   return;
+  }
+ }
+
+ score++;
+
+ ctx.fillStyle="white";
+ ctx.font="bold 20px Arial";
+ ctx.fillText("SCORE: "+score,15,30);
+
+ requestAnimationFrame(draw);
+}
+
+function startGame(){
+ document.getElementById("garage").style.display="none";
+ document.getElementById("money").style.display="none";
+ document.getElementById("game").style.display="block";
+ document.getElementById("carName").textContent=cars[selected].name;
+ playerX=200;
+ score=0;
+ traffic=[];
+ playing=true;
+ draw();
+}
+
+function backGarage(){
+ playing=false;
+ document.getElementById("game").style.display="none";
+ document.getElementById("garage").style.display="grid";
+ document.getElementById("money").style.display="block";
+ updateGarage();
+}
+
+document.addEventListener("keydown",e=>{
+ if(!playing)return;
+ if(e.key==="ArrowLeft"&&playerX>100)playerX-=105;
+ if(e.key==="ArrowRight"&&playerX<300)playerX+=105;
+});
+
+updateGarage();
+</script>
+</body>
+</html>
