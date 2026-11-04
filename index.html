@@ -1,10 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>STREET RUSH</title>
 <style>
+html, body {
+margin: 0;
+padding: 0;
+width: 100%;height: 100%;
+overflow: hidden;
+}    
 *{box-sizing:border-box}
 body{
  margin:0;
@@ -135,37 +142,42 @@ function updateGarage(){
  saveGame();
 }
 
-function selectCar(i){
-    if(owned[i]){
-        selected=i;
+function selectCar(i) {
+    if (owned[i]) {
+        selected = i;
         saveGame();
         updateGarage();
         startGame();
-    }else if(money>=cars[i].price){
-        money-=cars[i].price;
-        owned[i]=true;
-        selected=i;
+    } else if (money >= cars[i].price) {
+        money -= cars[i].price;
+        owned[i] = true;
+        selected = i;
         saveGame();
         updateGarage();
+        startGame();
     }
 }
 
-const leftBtn=document.getElementById("leftBtn");
-const rightBtn=document.getElementById("rightBtn");
+const leftBtn = document.getElementById("leftBtn");
+const rightBtn = document.getElementById("rightBtn");
 
-leftBtn.onclick=()=>{
-    if(playing && playerX>100) playerX-=105;
+leftBtn.onclick = () => {
+    if (playing && playerx > 100) {
+        playerx -= 105;
+    }
 };
 
-rightBtn.onclick=()=>{
-    if(playing && playerX<300) playerX+=105;
+rightBtn.onclick = () => {
+    if (playing && playerx < 300) {
+        playerx += 105;
+    }
 };
 
-const canvas=document.getElementById("road");
-const ctx=canvas.getContext("2d");
-let playerX=200;
-let roadLines=0;
+const canvas = document.getElementById("road");
+const ctx = canvas.getContext("2d");
 
+let playerx = 200;
+let roadLines = 0;
 function draw(){
     if(!playing)return;
 
@@ -254,16 +266,43 @@ function draw(){
         });
     }
 
-    // Player car
-    ctx.shadowBlur=20;
-    ctx.shadowColor=cars[selected].color;
-    ctx.fillStyle=cars[selected].color;
-    ctx.fillRect(playerX-19,490,38,70);
-    ctx.shadowBlur=0;
+   // Sport car
+ctx.save();
+ctx.shadowBlur=18;
+ctx.shadowColor=cars[selected].color;
 
-    ctx.fillStyle="#111";
-    ctx.fillRect(playerX-13,500,26,15);
-    ctx.fillRect(playerX-13,535,26,15);
+// Body
+ctx.fillStyle=cars[selected].color;
+ctx.beginPath();
+ctx.moveTo(playerx,485);
+ctx.lineTo(playerx+17,500);
+ctx.lineTo(playerx+19,545);
+ctx.lineTo(playerx+13,560);
+ctx.lineTo(playerx-13,560);
+ctx.lineTo(playerx-19,545);
+ctx.lineTo(playerx-17,500);
+ctx.closePath();
+ctx.fill();
+
+// Windows
+ctx.shadowBlur=0;
+ctx.fillStyle="#101a2c";
+ctx.fillRect(playerx-12,505,24,15);
+ctx.fillRect(playerx-12,535,24,13);
+
+// Wheels
+ctx.fillStyle="#050505";
+ctx.fillRect(playerx-23,505,6,17);
+ctx.fillRect(playerx+17,505,6,17);
+ctx.fillRect(playerx-23,538,6,17);
+ctx.fillRect(playerx+17,538,6,17);
+
+// Headlights
+ctx.fillStyle="#00eaff";
+ctx.fillRect(playerx-14,488,8,4);
+ctx.fillRect(playerx+6,488,8,4);
+
+ctx.restore();
 
    // Collision
 for(let t of traffic){
