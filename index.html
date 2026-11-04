@@ -10,7 +10,7 @@ html, body {
 margin: 0;
 padding: 0;
 width: 100%;height: 100%;
-overflow: hidden;
+overflow-y: auto;
 }    
 *{box-sizing:border-box}
 body{
@@ -304,11 +304,15 @@ ctx.fillRect(playerx+6,488,8,4);
 
 ctx.restore();
 
-   // Collision
-for(let t of traffic){
-    if(Math.abs(t.x-playerX)<32 && t.y>440 && t.y<555){
-        playing=false;
-        alert("CRASH! Score: "+score);
+  // Collision
+for (let t of traffic) {
+    if (
+        Math.abs(t.x - playerx) < 28 &&
+        t.y + 60 > 490 &&
+        t.y < 560
+    ) {
+        playing = false;
+        alert("CRASH! Score: " + score);
         backGarage();
         return;
     }
@@ -335,7 +339,9 @@ ctx.fillText("COINS: "+money,15,80);
 requestAnimationFrame(draw);
 }
     draw();
-
+const music = new Audio("street_rush_theme_1.wav");
+music.loop = true;
+music.volume = 0.4;
 function startGame(){
     document.getElementById("garage").style.display="none";
     document.getElementById("money").style.display="none";
@@ -346,7 +352,7 @@ function startGame(){
     score=0;
     traffic=[];
     playing=true;
-
+music.play();
     draw();
 }
 function backGarage(){
@@ -365,5 +371,9 @@ document.addEventListener("keydown",e=>{
 
 updateGarage();
 </script>
+<div id="controls" style="display:none; position:fixed; bottom:15px; left:0; width:100%; justify-content:space-evenly; z-index:9999;">
+<button id="leftBtn" style="font-size:30px;padding:15px 30px;">◀</button>
+<button id="rightBtn" style="font-size:30px;padding:15px 30px;">▶</button>
+</div>
 </body>
 </html>
